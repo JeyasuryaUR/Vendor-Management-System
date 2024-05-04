@@ -1,5 +1,7 @@
 from django.db import models
 from django.db.models import F, Avg
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class Vendor(models.Model):
     name = models.CharField(max_length=100)
@@ -70,6 +72,10 @@ class PurchaseOrder(models.Model):
         fulfilled_orders = total_orders.filter(status='completed', quality_rating__gte=0)
         vendor.fulfillment_rate = (fulfilled_orders.count() / total_orders.count()) * 100
         vendor.save()
+
+@receiver(post_save, sender=PurchaseOrder)
+def update_vendor_metrics(sender, instance, **kwargs):
+    instance.save()
 
 class HistoricalPerformance(models.Model):
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
